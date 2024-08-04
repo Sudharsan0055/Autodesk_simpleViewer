@@ -39,7 +39,6 @@ class HistogramExtension extends BaseExtension {
         this._pieChartPanel = new HistogramPanel(this, 'dashboard-piechart-panel', 'Property Histogram', { x: 10, y: 420, chartType: 'doughnut' });
         this._barChartButton = this.createToolbarButton('dashboard-barchart-button', 'https://img.icons8.com/small/32/bar-chart.png', 'Show Property Histogram (Bar Chart)');
         this._barChartButton.onClick = () => {
-            // TODO
             this._barChartPanel.setVisible(!this._barChartPanel.isVisible());
             this._barChartButton.setState(this._barChartPanel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
             if (this._barChartPanel.isVisible() && this.viewer.model) {
@@ -48,7 +47,6 @@ class HistogramExtension extends BaseExtension {
         };
         this._pieChartButton = this.createToolbarButton('dashboard-piechart-button', 'https://img.icons8.com/small/32/pie-chart.png', 'Show Property Histogram (Pie Chart)');
         this._pieChartButton.onClick = () => {
-            // TODO
             this._pieChartPanel.setVisible(!this._pieChartPanel.isVisible());
             this._pieChartButton.setState(this._pieChartPanel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
             if (this._pieChartPanel.isVisible() && this.viewer.model) {
@@ -83,6 +81,39 @@ class HistogramExtension extends BaseExtension {
                     }
                 }
                 resolve(histogram);
+            }, reject);
+        });
+    }
+
+    async getArea(dbid) {
+        const aggregateFunc = (aggregate, value, property) => {
+            return aggregate + value;
+        };
+        const initialValue = 0;
+        const { sum } = await this.aggregatePropertyValues(this.viewer.model, [dbid], 'Area', aggregateFunc, initialValue);
+        return sum;
+    }
+
+    async getVolume(dbid) {
+        const aggregateFunc = (aggregate, value, property) => {
+            return aggregate + value;
+        };
+        const initialValue = 0;
+        const { sum } = await this.aggregatePropertyValues(this.viewer.model, [dbid], 'Volume', aggregateFunc, initialValue);
+        return sum;
+    }
+
+    async aggregatePropertyValues(model, dbids, propertyName, aggregateFunc, initialValue = 0) {
+        return new Promise(function (resolve, reject) {
+            let aggregatedValue = initialValue;
+            model.getBulkProperties(dbids, { propFilter: [propertyName] }, function (results) {
+                for (const result of results) {
+                    if (result.properties.length > 0) {
+                        const prop = result.properties[0];
+                        aggregatedValue = aggregateFunc(aggregatedValue, prop.displayValue, prop);
+                    }
+                }
+                resolve({ sum: aggregatedValue });
             }, reject);
         });
     }

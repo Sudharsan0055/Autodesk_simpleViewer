@@ -1,16 +1,22 @@
 const DATAGRID_CONFIG = {
-    requiredProps: ['name', 'Volume', 'Level'], // Which properties should be requested for each object
-    columns: [ // Definition of individual grid columns (see http://tabulator.info for more details)
-        { title: 'ID', field: 'dbid' },
-        { title: 'Name', field: 'name', width: 150 },
+    requiredProps: ['name', 'Area', 'Volume', 'Length', 'Category', 'BOQDesc'], 
+    columns: [ 
+        //{ title: 'ID', field: 'dbid' },
+       // { title: 'Name', field: 'name', width: 150 },
+         {title: 'Category', field: 'category'},
+         {title: "BOQDesc", field: 'BOQDesc'},
         { title: 'Volume', field: 'volume', hozAlign: 'left', formatter: 'progress' },
+        {title: 'Area', field:'area'},
         { title: 'Level', field: 'level' }
     ],
     groupBy: 'level', // Optional column to group by
     createRow: (dbid, name, props) => { // Function generating grid rows based on recieved object properties
         const volume = props.find(p => p.displayName === 'Volume')?.displayValue;
-        const level = props.find(p => p.displayName === 'Level' && p.displayCategory === 'Constraints')?.displayValue;
-        return { dbid, name, volume, level };
+        const BOQDesc = props.find(p => p.displayName === 'BOQDesc')?.displayValue;
+        const category = props.find(p => p.displayName === 'Category')?.displayValue;
+        const area = props.find(p => p.displayName === 'Area')?.displayValue;
+       // const length = props.find(p => p.displayName === 'Length' && p.displayCategory === 'Constraints')?.displayValue;
+        return { dbid, name, volume, area, category, BOQDesc };
     },
     onRowClick: (row, viewer) => {
         viewer.isolate([row.dbid]);

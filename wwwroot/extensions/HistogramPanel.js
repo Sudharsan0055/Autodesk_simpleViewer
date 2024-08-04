@@ -21,12 +21,18 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.content.innerHTML = `
             <div class="props-container" style="position: relative; height: 25px; padding: 0.5em;">
                 <select class="props"></select>
+                <select class="metric">
+                    <option value="COUNT">COUNT</option>
+                    <option value="AREA">AREA</option>
+                    <option value="VOLUME">VOLUME</option>
+                </select>
             </div>
             <div class="chart-container" style="position: relative; height: 325px; padding: 0.5em;">
                 <canvas class="chart"></canvas>
             </div>
         `;
         this.select = this.content.querySelector('select.props');
+        this.metricSelect = this.content.querySelector('select.metric');
         this.canvas = this.content.querySelector('canvas.chart');
         this.container.appendChild(this.content);
     }
@@ -45,17 +51,28 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
     async setModel(model) {
         const propertyNames = await this.extension.findPropertyNames(model);
         this.select.innerHTML = propertyNames.map(prop => `<option value="${prop}">${prop}</option>`).join('\n');
-        this.select.onchange = () => this.updateChart(model, this.select.value);
-        this.updateChart(model, this.select.value);
+        this.select.onchange = () => this.updateChart(model, this.select.value, this.metricSelect.value);
+        this.metricSelect.onchange = () => this.updateChart(model, this.select.value, this.metricSelect.value);
+        this.updateChart(model, this.select.value, this.metricSelect.value);
     }
 
-    async updateChart(model, propName) {
+    async updateChart(model, propName, metric) {
         const histogram = await this.extension.findPropertyValueOccurrences(model, propName);
         const propertyValues = Array.from(histogram.keys());
         this.chart.data.labels = propertyValues;
         const dataset = this.chart.data.datasets[0];
-        dataset.label = propName;
-        dataset.data = propertyValues.map(val => histogram.get(val).length);
+        dataset.label = `${propName} (${metric})`;
+        dataset.data = await Promise.all(propertyValues.map(async (val) => {
+            const dbids = histogram.get(val);
+            if (metric === 'AREA') {
+                return (await Promise.all(dbids.map(dbid => this.extension.getArea(dbid)))).reduce((sum, area) => sum + area, 0);
+            } else if (metric === 'VOLUME') {
+                return (await Promise.all(dbids.map(dbid => this.extension.getVolume(dbid)))).reduce((sum, volume) => sum + volume, 0);
+            } else { // COUNT
+                return dbids.length;
+            }
+        }));
+
         if (dataset.data.length > 0) {
             const hslaColors = dataset.data.map((val, index) => `hsla(${Math.round(index * (360 / dataset.data.length))}, 100%, 50%, 0.2)`);
             dataset.backgroundColor = dataset.borderColor = hslaColors;

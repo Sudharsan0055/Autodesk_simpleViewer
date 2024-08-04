@@ -1,6 +1,5 @@
 /// import * as Autodesk from "@types/forge-viewer";
 import './extensions/LoggerExtension.js';
-import './extensions/summaryExtension.js';
 import './extensions/HistogramExtension.js';
 import './extensions/DataGridExtension.js';
 
@@ -25,7 +24,6 @@ export function initViewer(container) {
                 extensions: [
                     'Autodesk.DocumentBrowser',
                     'LoggerExtension',
-                    'SummaryExtension',
                     'HistogramExtension',
                     'DataGridExtension',
                  ]
